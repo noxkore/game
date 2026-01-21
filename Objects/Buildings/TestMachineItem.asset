@@ -16,4 +16,4 @@ MonoBehaviour:
   displayName: TestMachine
   icon: {fileID: 21300000, guid: dd9393e9f6bed344e893f7902c61dccf, type: 3}
   maxStack: 2
-  prefab: {fileID: 3967079762935528519, guid: 956446d0882e6a04e8396febceeedbf7, type: 3}
+  prefab: {fileID: 4393131814919334267, guid: 2e058b7ec4943d943978e2faf310a652, type: 3}

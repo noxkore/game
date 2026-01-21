@@ -18,7 +18,6 @@ public class TriggerActivateOnKey : MonoBehaviour
         {
             if (objectToActivate != null)
             {
-                // Alterna o estado do objeto
                 objectToActivate.SetActive(!objectToActivate.activeSelf);
             }
             else
@@ -33,20 +32,6 @@ public class TriggerActivateOnKey : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInside = true;
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerInside = false;
-
-            // Opcional: desativa o objeto ao sair
-            if (objectToActivate != null)
-            {
-                objectToActivate.SetActive(false);
-            }
         }
     }
 }

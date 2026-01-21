@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: Machine
   size: {x: 1, y: 1}
-  prefab: {fileID: 3967079762935528519, guid: 956446d0882e6a04e8396febceeedbf7, type: 3}
+  prefab: {fileID: 4393131814919334267, guid: 2e058b7ec4943d943978e2faf310a652, type: 3}

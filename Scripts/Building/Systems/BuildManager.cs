@@ -16,8 +16,9 @@ public class BuildManager : MonoBehaviour
 
     private GameObject previewInstance;
     private BaseBuildable currentBuildable;
-
     private ItemData lastItem;
+
+    private int currentRotation = 0; // 0, 90, 180, 270
 
     private void Start()
     {
@@ -28,12 +29,14 @@ public class BuildManager : MonoBehaviour
     {
         UpdateSelectedBuildable();
         grid = world.GetGrid();
+
         if (currentBuildable == null || grid == null)
         {
             ClearPreview();
             return;
         }
 
+        HandleRotationInput();
         UpdatePreview();
 
         if (Input.GetMouseButtonDown(0))
@@ -51,11 +54,9 @@ public class BuildManager : MonoBehaviour
         lastItem = currentItem;
         ClearPreview();
         currentBuildable = null;
+        currentRotation = 0;
 
-        if (currentItem == null)
-            return;
-
-        if (currentItem.prefab == null)
+        if (currentItem == null || currentItem.prefab == null)
             return;
 
         var buildingInstance = currentItem.prefab.GetComponent<BuildingInstance>();
@@ -84,6 +85,7 @@ public class BuildManager : MonoBehaviour
 
         previewInstance.SetActive(true);
         previewInstance.transform.position = grid.CellToWorld(cellPos);
+        previewInstance.transform.rotation = Quaternion.Euler(0, 0, currentRotation);
 
         var cell = grid.GetCell(cellPos) as GridCell;
         if (cell == null)
@@ -94,6 +96,18 @@ public class BuildManager : MonoBehaviour
 
         bool canPlace = currentBuildable.CanPlace(grid, cell);
         SetPreviewColor(canPlace ? validColor : invalidColor);
+    }
+
+    private void HandleRotationInput()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            currentRotation += 90;
+            if (currentRotation >= 360) currentRotation = 0;
+
+            if (previewInstance != null)
+                previewInstance.transform.rotation = Quaternion.Euler(0, 0, currentRotation);
+        }
     }
 
     private void TryPlace()
@@ -114,22 +128,37 @@ public class BuildManager : MonoBehaviour
         GameObject obj = Instantiate(
             currentBuildable.Prefab,
             grid.CellToWorld(cellPos),
-            Quaternion.identity
+            Quaternion.Euler(0, 0, currentRotation)
         );
 
         var instance = obj.GetComponent<BuildingInstance>();
         instance.Initialize(currentBuildable, cell);
         instance.OnPlaced(grid);
 
-        for (int x = 0; x < currentBuildable.Size.x; x++)
+        bool hasGetterBrain = obj.GetComponent<GetterBrain>() != null;
+
+        if (!hasGetterBrain)
         {
-            for (int y = 0; y < currentBuildable.Size.y; y++)
+            for (int x = 0; x < currentBuildable.Size.x; x++)
             {
-                var pos = cell.Position + new Vector2Int(x, y);
-                var c = grid.GetCell(pos);
-                if (c != null)
-                    c.Place(currentBuildable);
+                for (int y = 0; y < currentBuildable.Size.y; y++)
+                {
+                    var pos = cell.Position + new Vector2Int(x, y);
+                    var c = grid.GetCell(pos);
+                    if (c != null)
+                        c.Place(currentBuildable);
+                }
             }
+        }
+
+        var selectedSlot = hotbar.GetSelectedSlot();
+        if (selectedSlot != null && !selectedSlot.IsEmpty)
+        {
+            selectedSlot.amount--;
+            if (selectedSlot.amount <= 0)
+                selectedSlot.Clear();
+
+            PlayerInventory.Instance.NotifyChanged();
         }
     }
 
@@ -146,7 +175,7 @@ public class BuildManager : MonoBehaviour
         foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>())
         {
             sr.color = validColor;
-            sr.sortingOrder += 1000; 
+            sr.sortingOrder += 1000;
         }
     }
 
@@ -156,8 +185,6 @@ public class BuildManager : MonoBehaviour
             return;
 
         foreach (var sr in previewInstance.GetComponentsInChildren<SpriteRenderer>())
-        {
             sr.color = color;
-        }
     }
 }
