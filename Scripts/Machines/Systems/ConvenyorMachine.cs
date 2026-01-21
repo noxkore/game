@@ -11,6 +11,11 @@ public class ConveyorMachine : BaseMachine
 
     private float transferTimer = 0f;
 
+    private void Update()
+    {
+        Execute(Time.deltaTime);
+    }
+
     protected override void Awake()
     {
         base.Awake();
