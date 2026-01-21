@@ -19,6 +19,11 @@ public class CollectOnEnter : BaseCollectable
         if (!other.TryGetComponent<BaseInventory>(out BaseInventory inventory))
             return;
 
+        if (!other.CompareTag("Player"))
+        {
+            return;
+        }
+
         Collect(inventory);
     }
 

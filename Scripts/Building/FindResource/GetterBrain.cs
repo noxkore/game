@@ -14,7 +14,7 @@ public class GetterBrain : MonoBehaviour
     [SerializeField] private float dropOffsetRadius = 0.3f;
 
     [Header("Debug Base")]
-    [SerializeField] private Vector3 basePosition;
+    [SerializeField] public Vector3 basePosition;
 
     private FollowerBot mover;
     private BotAttack attacker;
@@ -105,23 +105,63 @@ public class GetterBrain : MonoBehaviour
 
         Debug.Log($"[GetterBrain] Inventário cheio! Slots com itens: {machine.Inventory.Slots.Count}, Objetos que serão dropados: {totalObjectsToDrop}");
 
-        // Instancia os objetos
+        // Detecta se há uma máquina no local da base
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(basePosition, dropOffsetRadius, LayerMask.GetMask("Machine"));
+        BaseMachine machineAtBase = null;
+
+        foreach (var col in colliders)
+        {
+            BaseMachine m = col.GetComponent<BaseMachine>();
+            if (m != null && m != machine)
+            {
+                print("machine found!");
+                machineAtBase = m;
+                break;
+            }
+        }
+
+        // Instancia os objetos ou envia para a máquina detectada
         foreach (var slot in machine.Inventory.Slots)
         {
             if (!slot.IsEmpty && slot.amount > 0 && slot.item.prefab != null)
             {
                 for (int i = 0; i < slot.amount; i++)
                 {
-                    Vector2 offset = UnityEngine.Random.insideUnitCircle * dropOffsetRadius;
-                    Vector3 dropPos = (Vector2)basePosition + offset;
+                    if (machineAtBase != null)
+                    {
+                        // Tenta inserir na máquina à base
+                        GameObject temp = Instantiate(slot.item.prefab);
+                        var collectable = temp.GetComponent<ICollectable>();
 
-                    GameObject go = Instantiate(slot.item.prefab, dropPos, Quaternion.identity);
-                    SetLayerRecursively(go, dropLayer);
+                        if (collectable != null && machineAtBase.TryInput(collectable))
+                        {
+                            print("dropped in machine");
+                            // Inserido com sucesso, destrói o prefab temporário
+                            Destroy(temp);
+                        }
+                        else
+                        {
+                            // Não conseguiu inserir, dropar no chão
+                            Destroy(temp);
+                            Vector2 offset = UnityEngine.Random.insideUnitCircle * dropOffsetRadius;
+                            Vector3 dropPos = (Vector2)basePosition + offset;
+                            GameObject go = Instantiate(slot.item.prefab, dropPos, Quaternion.identity);
+                            SetLayerRecursively(go, dropLayer);
+                        }
+                    }
+                    else
+                    {
+                        // Nenhuma máquina, dropa normalmente
+                        Vector2 offset = UnityEngine.Random.insideUnitCircle * dropOffsetRadius;
+                        Vector3 dropPos = (Vector2)basePosition + offset;
+                        GameObject go = Instantiate(slot.item.prefab, dropPos, Quaternion.identity);
+                        SetLayerRecursively(go, dropLayer);
+                    }
                 }
             }
         }
 
-        // Limpa o inventário depois de dropar
+        // Limpa o inventário depois de dropar ou transferir
         machine.Inventory.ClearInventory();
     }
 
